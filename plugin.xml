@@ -8,16 +8,21 @@
 
     <description>Displays a native search bar and sends the search String back to the JavaScript interface.</description>
 
-    <engines>
-        <engine name="cordova" version=">=3.0.0" />
-    </engines>
-
-    <asset src="www/searchbar.js" target="searchbar.js" />
+	<engines>
+		<engine name="cordova" version=">=3.0.0" />
+	</engines>
 
     <platform name="ios">
-    	<config-file target="config.xml" parent="plugins">
-    		<plugin name="SearchBar" value="SearchBar"/>
+    	<config-file target="config.xml" parent="/*">
+    		<feature name="SearchBar">
+                <param name="ios-package" value="SearchBar"/>
+            </feature>
         </config-file>
+
+        <js-module src="www/searchbar.js" name="searchbar">
+        	<clobbers target="cordova.searchbar" />
+    	</js-module>
+
     	<header-file src="src/ios/SearchBar.h" />
     	<source-file src="src/ios/SearchBar.m" />
     </platform>

@@ -26,3 +26,5 @@ function handleSearch(data) {
 }
 
 document.addEventListener('searchEvent', handleSearch, true);
+
+module.exports = SearchBar;

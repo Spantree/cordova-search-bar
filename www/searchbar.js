@@ -18,13 +18,4 @@ var SearchBar = {
     
 }
 
-// Create Search event for callback
-// To call the event from Objective C:
-//  [self writeJavascript:@"cordova.fireDocumentEvent('searchEvent', {text:'TEXT_TO_SEND'})"];
-function handleSearch(data) {
-    alert("You searched: " + data.text);
-}
-
-document.addEventListener('searchEvent', handleSearch, true);
-
 module.exports = SearchBar;

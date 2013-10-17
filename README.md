@@ -36,11 +36,11 @@ Slides-in the native UISearchBar onto the top of the screen.
 <code>hide()</code>  
 Slides-out the native UISearchBar.
 
-Handling a Search Event
------------------------
+Handling User Input
+-------------------
 
-When a user presses the native "Search" button, the native code looks to fire a JavaScript event named **searchEvent**. 
-The native code will send an Object with one key/value pair of key "text" where the value is the search String to the function you associate with this event.
+When a user enters a search term into the UISearchBar and presses the native "Search" button, the native code looks to fire a JavaScript event named **searchEvent**. 
+The native code will send an Object with one key/value pair of key "text" (value is the search String entered by the user) to the function associated with this event.  
 **You must add a JavaScript event listener with the name 'searchEvent' in order to retrieve the search value.**  
   
 Example:

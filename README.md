@@ -69,3 +69,7 @@ Default is <code>YES</code>, Set to <code>NO</code> to overlay SearchBar atop th
 <code>BOOL OFFSET_IOS7</code>  
 Determines if we should offset the top of the view when device is at or above iOS7.  
 Default is <code>YES</code>, Set to <code>NO</code> to use fullscreen.  
+
+<code>BOOL ALLOW_EMPTY_SEARCH</code>  
+Determines if user is allowed to hit the "Search" button if they have NOT entered data.  
+Default is <code>YES</code>, Set to <code>NO</code> to ensure user has entered at least one character before search.  

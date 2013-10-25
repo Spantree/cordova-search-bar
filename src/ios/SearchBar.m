@@ -17,9 +17,14 @@ static BOOL const RESIZE_WEBVIEW = YES;
  * This will allow the status bar to properly display. Set to NO to use fullscreen. */
 static BOOL const OFFSET_IOS7 = YES;
 
+/* Determines if user is allowed to hit the "Search" button if they have NOT entered data.
+ * Set to NO to ensure user has entered at least one character before search. */
+static BOOL const ALLOW_EMPTY_SEARCH = YES;
+
 # pragma mark - Initialization
 
 -(CDVPlugin*) initWithWebView:(UIWebView*)theWebView {
+    isShowing = false;
     return (SearchBar*)[super initWithWebView:theWebView];
 }
 
@@ -28,24 +33,43 @@ static BOOL const OFFSET_IOS7 = YES;
     // Setting y-offset to -height since we will be sliding-in the view.
     nativeSearchBar = [[UISearchBar alloc] initWithFrame:CGRectMake(0, -barHeight, self.webView.superview.bounds.size.width, barHeight)];
     nativeSearchBar.delegate = self;
+    
+    if (ALLOW_EMPTY_SEARCH) {
+        [self enableEmptySearch];
+    }
 }
+    
+-(void)enableEmptySearch {
+    UITextField* searchField = [self getTextField];
+    if (searchField) {
+        searchField.enablesReturnKeyAutomatically = NO;
+    }
+}
+    
+
 
 # pragma mark - Bridge Methods
 
 -(void)show:(CDVInvokedUrlCommand *)command {
+    if (isShowing) {
+        return;
+    }
+    
     if (nativeSearchBar == nil) {
         [self setupSearchBar:nil];
-	}
+    }
     
+    isShowing = true;
     [self.webView.superview addSubview:nativeSearchBar];
     [self slideDown];
 }
 
 -(void)hide:(CDVInvokedUrlCommand *)command {
-    if (nativeSearchBar == nil) {
+    if (!isShowing || nativeSearchBar == nil) {
         return;
-	}
-    
+    }
+
+    isShowing = false;
     [nativeSearchBar resignFirstResponder];
     [self slideUp];
 }
@@ -96,11 +120,47 @@ static BOOL const OFFSET_IOS7 = YES;
 -(CGFloat)getOffset {
     if (!OFFSET_IOS7) return 0.0;
     
-    NSString *sysVersion = [[UIDevice currentDevice] systemVersion];
-    if ([sysVersion compare:@"7.0" options:NSNumericSearch] != NSOrderedAscending) {
+    if ([self isiOS7]) {
         return 20.0; // Amount of offset required for versions at or above iOS 7.0
     }
     return 0.0;
+}
+
+    
+// Returns YES if device is at or above iOS7.
+-(BOOL)isiOS7 {
+    NSString *sysVersion = [[UIDevice currentDevice] systemVersion];
+    if ([sysVersion compare:@"7.0" options:NSNumericSearch] != NSOrderedAscending) {
+        return YES;
+    }
+    return NO;
+}
+
+// Returns the UITextField associated with this search bar.
+-(UITextField *)getTextField {
+    if ([self isiOS7]) {
+        // iOS7 requires iterating into an extra level of subviews.
+        return [self getTextFieldiOS7];
+    }
+        
+    for (UIView *subview in nativeSearchBar.subviews) {
+        if ([subview isKindOfClass:[UITextField class]]) {
+            return (UITextField *) subview;
+        }
+    }
+    return nil;
+}
+
+// Returns the UITextField associated with this search bar. (iOS7+ devices)
+-(UITextField *)getTextFieldiOS7 {
+    for (UIView *subView in nativeSearchBar.subviews) {
+        for (UIView *subSubView in subView.subviews) {
+            if ([subSubView isKindOfClass:[UITextField class]]) {
+                return (UITextField *) subSubView;
+            }
+        }
+    }
+    return nil;
 }
 
 #pragma mark - UISearchBar Delegate Methods

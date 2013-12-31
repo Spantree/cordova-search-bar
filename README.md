@@ -43,8 +43,7 @@ Slides-in the native UISearchBar within UINavigationBar. Will look the same as `
 Slides-out the native UISearchBar & UINavigationBar. DO NOT USE CONCURRENTLY WITH ````show()````/````hide()````.
 
 <code>push()</code>  
-Pushes another navigation item onto the stack. After being called the first time, a back button will appear. 
-If the back button is clicked, the plugin will fire a JavaScript event named **backEvent**.
+Pushes another navigation item onto the stack. Call after navigating to a new page in the WebView. After being called the first time, a back button will appear. If the back button is clicked, the Cordova WebView wil perform go back a page.
 DO NOT USE CONCURRENTLY WITH ````show()````/````hide()````.
 
 <code>pop()</code>  

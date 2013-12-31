@@ -127,7 +127,7 @@ static int const BACK_BUTTON_WIDTH = 50;
 }
     
 -(void)popNavigation:(CDVInvokedUrlCommand *)command {
-    [self writeJavascript:[NSString stringWithFormat:@"cordova.fireDocumentEvent('backEvent')"]];
+    [self.webView goBack];
     [nativeNavigationBar popNavigationItemAnimated:NO];
     if (nativeNavigationBar.items.count == 0) {
         [self slideOver:nativeSearchBar withOffsetX:-BACK_BUTTON_WIDTH];

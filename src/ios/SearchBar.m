@@ -2,7 +2,7 @@
 
 @implementation SearchBar
 
-@synthesize nativeSearchBar;
+@synthesize nativeSearchBar, nativeNavigationBar;
 
 #pragma mark - Constants
 
@@ -20,6 +20,8 @@ static BOOL const OFFSET_IOS7 = YES;
 /* Determines if user is allowed to hit the "Search" button if they have NOT entered data.
  * Set to NO to ensure user has entered at least one character before search. */
 static BOOL const ALLOW_EMPTY_SEARCH = YES;
+    
+static int const BACK_BUTTON_WIDTH = 50;
 
 # pragma mark - Initialization
 
@@ -28,15 +30,33 @@ static BOOL const ALLOW_EMPTY_SEARCH = YES;
     return (SearchBar*)[super initWithWebView:theWebView];
 }
 
--(void)setupSearchBar:(CDVInvokedUrlCommand *)command {
+-(void)setupSearchBar:(BOOL)asNavigation {
     float barHeight = 44.0; // 44.0 is the standard height in px for iOS UISearchBar.
-    // Setting y-offset to -height since we will be sliding-in the view.
-    nativeSearchBar = [[UISearchBar alloc] initWithFrame:CGRectMake(0, -barHeight, self.webView.superview.bounds.size.width, barHeight)];
+    // Setting y-offset to -height since we will be sliding-in the view, or none if embedding within a UINavigationbar.
+    nativeSearchBar = [[UISearchBar alloc] initWithFrame:CGRectMake(0, asNavigation ? 0 : -barHeight, self.webView.superview.bounds.size.width, barHeight)];
     nativeSearchBar.delegate = self;
+    nativeSearchBar.barTintColor = [UIColor blackColor];
     
     if (ALLOW_EMPTY_SEARCH) {
         [self enableEmptySearch];
     }
+}
+    
+-(void)setupNavigation {
+    nativeNavigationBar = [[UINavigationBar alloc] initWithFrame:CGRectMake(0, 20, self.webView.superview.bounds.size.width, 44)];
+    [nativeNavigationBar setBarTintColor: [UIColor blackColor]];
+    [nativeNavigationBar setTintColor: [UIColor colorWithRed:0.6 green:0.6 blue:0.6 alpha:1]];
+    [nativeNavigationBar setTranslucent: NO];
+    [nativeNavigationBar addSubview:nativeSearchBar];
+    
+    [self.webView.superview addSubview: nativeNavigationBar];
+}
+    
+-(UINavigationItem*)makeNavigationItem {
+    UINavigationItem* nativeNavigationItem = [[UINavigationItem alloc] initWithTitle:@""];
+    UIBarButtonItem* buttonItem = [[UIBarButtonItem alloc] initWithTitle:@"Back" style:UIBarButtonItemStyleBordered target:self action:@selector(popNavigation:)];
+    [nativeNavigationItem setLeftBarButtonItem: buttonItem];
+    return nativeNavigationItem;
 }
     
 -(void)enableEmptySearch {
@@ -56,12 +76,13 @@ static BOOL const ALLOW_EMPTY_SEARCH = YES;
     }
     
     if (nativeSearchBar == nil) {
-        [self setupSearchBar:nil];
+        [self setupSearchBar:NO];
     }
     
     isShowing = true;
+    
     [self.webView.superview addSubview:nativeSearchBar];
-    [self slideDown];
+    [self slideDown: nativeSearchBar];
 }
 
 -(void)hide:(CDVInvokedUrlCommand *)command {
@@ -71,40 +92,87 @@ static BOOL const ALLOW_EMPTY_SEARCH = YES;
 
     isShowing = false;
     [nativeSearchBar resignFirstResponder];
-    [self slideUp];
+    [self slideUp: nativeSearchBar];
+}
+    
+-(void)showNavigation:(CDVInvokedUrlCommand *)command {
+    if (isShowing) {
+        return;
+    }
+    
+    if (nativeNavigationBar == nil) {
+        [self setupSearchBar:YES];
+        [self setupNavigation];
+    }
+    
+    isShowing = true;
+}
+    
+-(void)hideNavigation:(CDVInvokedUrlCommand *)command {
+    if (!isShowing || nativeSearchBar == nil) {
+        return;
+    }
+    
+    isShowing = false;
+    [nativeSearchBar resignFirstResponder];
+    [self slideUp: nativeSearchBar];
+}
+    
+-(void)pushNavigation:(CDVInvokedUrlCommand *)command {
+    [nativeNavigationBar pushNavigationItem:[self makeNavigationItem] animated:NO];
+    
+    if (nativeNavigationBar.items.count == 1) {
+        [self slideOver:nativeSearchBar withOffsetX:BACK_BUTTON_WIDTH];
+    }
+}
+    
+-(void)popNavigation:(CDVInvokedUrlCommand *)command {
+    [self writeJavascript:[NSString stringWithFormat:@"cordova.fireDocumentEvent('backEvent')"]];
+    [nativeNavigationBar popNavigationItemAnimated:NO];
+    if (nativeNavigationBar.items.count == 0) {
+        [self slideOver:nativeSearchBar withOffsetX:-BACK_BUTTON_WIDTH];
+    }
 }
 
-#pragma mark - Helper Methods
+#pragma mark - Animations
 
 /* Slides the SearchBar into view from the top. Assumes SearchBar is already part of the drawn view. */
--(void)slideDown {
+-(void)slideDown:(UIView *)view {
     [UIView animateWithDuration:ANIMATION_DURATION
                      animations:^ {
-                         [nativeSearchBar setFrame:CGRectOffset([nativeSearchBar frame], 0,
-                                                                nativeSearchBar.frame.size.height + [self getOffset])];
-                         if (RESIZE_WEBVIEW) [self shrinkWebView];
+                         [view setFrame:CGRectOffset([view frame], 0, view.frame.size.height + [self getOffset])];
+                         if (RESIZE_WEBVIEW) [self shrinkWebView: view];
                      }];
 }
 
 /* Slides the SearchBar up and out of view. Removes the SearchBar from the superview after the animation. */
--(void)slideUp {
+-(void)slideUp:(UIView *)view {
     [UIView animateWithDuration:ANIMATION_DURATION
                      animations:^ {
-                         [nativeSearchBar setFrame:CGRectOffset([nativeSearchBar frame], 0,
-                                                                -(nativeSearchBar.frame.size.height + [self getOffset]))];
+                         [view setFrame:CGRectOffset([view frame], 0, -(view.frame.size.height + [self getOffset]))];
                          if (RESIZE_WEBVIEW) [self restoreWebView];
                      }
                      completion:^(BOOL finished) {
-                         [nativeSearchBar removeFromSuperview];
+                         [view removeFromSuperview];
                      }];
 }
+    
+-(void)slideOver:(UIView*)view withOffsetX:(CGFloat)dx {
+    CGRect rect = view.frame;
+    [UIView animateWithDuration:ANIMATION_DURATION
+                     animations:^ {
+                         [view setFrame:CGRectMake(rect.origin.x + dx, rect.origin.y, view.frame.size.width - dx, rect.size.height)];
+                     }];
+}
+    
+#pragma mark - Helper Methods
 
 /* Adjusts the height of the WebView to account for the SearchBar. */
--(void)shrinkWebView {
+-(void)shrinkWebView:(UIView *)underneithView {
     defaultWebViewFrame = self.webView.frame;
     
     CGRect newFrame = CGRectMake(defaultWebViewFrame.origin.x,
-                                 nativeSearchBar.frame.size.height + [self getOffset],
+                                 underneithView.frame.size.height + [self getOffset],
                                  defaultWebViewFrame.size.width,
                                  defaultWebViewFrame.size.height - nativeSearchBar.frame.size.height);
     

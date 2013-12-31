@@ -6,5 +6,6 @@
 }
 
 @property (nonatomic, strong) UISearchBar *nativeSearchBar;
+@property (nonatomic, strong) UINavigationBar *nativeNavigationBar;
 
 @end

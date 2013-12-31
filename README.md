@@ -36,6 +36,21 @@ Slides-in the native UISearchBar onto the top of the screen.
 <code>hide()</code>  
 Slides-out the native UISearchBar.
 
+<code>showNavigation()</code>  
+Slides-in the native UISearchBar within UINavigationBar. Will look the same as ````show()```` until ````push()```` is called (see below), which will add a native "Back" button to the left of the UISearchBar. DO NOT USE CONCURRENTLY WITH ````show()````/````hide()````.
+
+<code>hideNavigation()</code>  
+Slides-out the native UISearchBar & UINavigationBar. DO NOT USE CONCURRENTLY WITH ````show()````/````hide()````.
+
+<code>push()</code>  
+Pushes another navigation item onto the stack. After being called the first time, a back button will appear. 
+If the back button is clicked, the plugin will fire a JavaScript event named **backEvent**.
+DO NOT USE CONCURRENTLY WITH ````show()````/````hide()````.
+
+<code>pop()</code>  
+Removes the top navigation item off of the stack. If the last item is removed, the back button will disappear.
+DO NOT USE CONCURRENTLY WITH ````show()````/````hide()````.
+
 Handling User Input
 -------------------
 

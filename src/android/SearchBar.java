@@ -54,7 +54,12 @@ public class SearchBar extends CordovaPlugin implements TextView.OnEditorActionL
         searchView = new SearchView(cordova.getActivity());
         searchView.getInput().setOnEditorActionListener(this);
         searchView.getSearchButton().setOnClickListener(onSearchClick);
-        overlayView(searchView);
+        cordova.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                overlayView(searchView);
+            }
+        });
     }
 
     /** The given View will be overlap on top of the local WebView. */

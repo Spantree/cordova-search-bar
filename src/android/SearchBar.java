@@ -1,4 +1,4 @@
-package net.spanteree.searchbar;
+package net.spantree.searchbar;
 
 import android.content.Context;
 import android.util.TypedValue;

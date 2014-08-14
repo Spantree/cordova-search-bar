@@ -30,7 +30,7 @@
     
     <!-- Android -->
     <platform name="android">
-        <config-file target="config.xml" parent="/*">
+        <config-file target="res/xml/config.xml" parent="/*">
             <feature name="SearchBar">
                 <param name="android-package" value="net.spantree.searchbar.SearchBar"/>
             </feature>
@@ -40,7 +40,7 @@
         	<clobbers target="cordova.searchbar" />
     	</js-module>
 
-        <source-file src="src/android/SearchBar.java" />
+        <source-file src="src/android/SearchBar.java" target-dir="src/net/spantree/searchbar" />
     </platform>
 
 </plugin>

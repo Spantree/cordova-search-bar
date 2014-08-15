@@ -41,6 +41,8 @@
     	</js-module>
 
         <source-file src="src/android/SearchBar.java" target-dir="src/net/spantree/searchbar" />
+        <source-file src="src/android/slide_in.xml" target-dir="res/animator" />
+        <source-file src="src/android/slide_out.xml" target-dir="res/animator" />
     </platform>
 
 </plugin>

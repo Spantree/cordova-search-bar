@@ -2,7 +2,7 @@ cordova-search-bar
 ==================
 
 A Cordova plugin to display a native SearchBar and send the search text back to the Cordova WebView.
-Currently only includes the iOS plugin.
+For **iOS**, this means a simple usage of the UISearchBar. For **Android**, this is an EditText with a colored border and added search icon (uses internal Android resource, so icon appearance may very).
 
 Installation
 ------------
@@ -37,16 +37,20 @@ Slides-in the native UISearchBar onto the top of the screen.
 Slides-out the native UISearchBar.
 
 <code>showNavigation()</code>  
+*iOS Only*  
 Slides-in the native UISearchBar within UINavigationBar. Will look the same as ````show()```` until ````push()```` is called (see below), which will add a native "Back" button to the left of the UISearchBar. DO NOT USE CONCURRENTLY WITH ````show()````/````hide()````.
 
 <code>hideNavigation()</code>  
+*iOS Only*  
 Slides-out the native UISearchBar & UINavigationBar. DO NOT USE CONCURRENTLY WITH ````show()````/````hide()````.
 
 <code>push()</code>  
+*iOS Only*  
 Pushes another navigation item onto the stack. Call after navigating to a new page in the WebView. After being called the first time, a back button will appear. If the back button is clicked, the Cordova WebView wil perform go back a page.
 DO NOT USE CONCURRENTLY WITH ````show()````/````hide()````.
 
 <code>pop()</code>  
+*iOS Only*  
 Removes the top navigation item off of the stack. If the last item is removed, the back button will disappear.
 DO NOT USE CONCURRENTLY WITH ````show()````/````hide()````.
 
@@ -69,7 +73,7 @@ document.addEventListener('searchEvent', mySearchEventFunction, true);
 
 Customization
 -------------
-
+**iOS**  
 You may customize the native UISearchBar functionality in any way by editing the SearchBar.h and SearchBar.m files.  
 SearchBar.m comes with the following constants allowing for quick and easy customization.  
 
@@ -87,3 +91,8 @@ Default is <code>YES</code>, Set to <code>NO</code> to use fullscreen.
 <code>BOOL ALLOW_EMPTY_SEARCH</code>  
 Determines if user is allowed to hit the "Search" button if they have NOT entered data.  
 Default is <code>YES</code>, Set to <code>NO</code> to ensure user has entered at least one character before search.  
+
+
+**Android**  
+You may customize the native EditText functionality in any way by editing the SearchBar.java Class.  
+

@@ -1,15 +1,23 @@
 package net.spantree.searchbar;
 
+import android.animation.AnimatorInflater;
+import android.animation.LayoutTransition;
 import android.content.Context;
+import android.graphics.Color;
 import android.util.TypedValue;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.AccelerateInterpolator;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.nm.finddoctor.R;
 
 /**
  * Spantree SearchBar Plugin.
@@ -24,8 +32,10 @@ public class SearchBar extends CordovaPlugin implements TextView.OnEditorActionL
     private static final String SEARCH_EVENT = "searchEvent";
     private static final String ACTION_SHOW = "show";
     private static final String ACTION_HIDE = "hide";
+    private static final int ANIMATION_DURATION = 2000;
 
     private SearchView searchView;
+    private boolean isShowing = false;
 
     /**
      * Executes the request and returns PluginResult.
@@ -50,10 +60,35 @@ public class SearchBar extends CordovaPlugin implements TextView.OnEditorActionL
         return true;
     }
 
+    private void initAnimations() {
+        LayoutTransition l = new LayoutTransition();
+        l.setDuration(ANIMATION_DURATION);
+        l.setInterpolator(LayoutTransition.APPEARING, new AccelerateDecelerateInterpolator());
+        l.setInterpolator(LayoutTransition.DISAPPEARING, new AccelerateInterpolator());
+        l.setAnimator(LayoutTransition.APPEARING, AnimatorInflater.loadAnimator(cordova.getActivity(), R.animator.slide_in));
+        l.setAnimator(LayoutTransition.DISAPPEARING, AnimatorInflater.loadAnimator(cordova.getActivity(), R.animator.slide_out));
+        webView.setLayoutTransition(l);
+    }
+
     private void initView() {
         searchView = new SearchView(cordova.getActivity());
-        searchView.getInput().setOnEditorActionListener(this);
-        searchView.getSearchButton().setOnClickListener(onSearchClick);
+        searchView.getInput().setOnEditorActionListener(this); // Handles keyboard search button
+        searchView.getInput().setOnTouchListener(drawableListener); // Handles inline search button
+        initAnimations();
+    }
+
+    /** The given View will be overlap on top of the local WebView. */
+    private void overlayView(final View view) {
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT);
+        params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        webView.addView(view, params);
+        view.bringToFront();
+    }
+
+    private void showSearchBar() {
+        isShowing = true;
         cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -62,30 +97,27 @@ public class SearchBar extends CordovaPlugin implements TextView.OnEditorActionL
         });
     }
 
-    /** The given View will be overlap on top of the local WebView. */
-    private void overlayView(final View view) {
-        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.WRAP_CONTENT,
-                RelativeLayout.LayoutParams.WRAP_CONTENT);
-        params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-        webView.addView(view, params);
-        view.bringToFront();
-    }
-
-    private void showSearchBar() {
-        if (searchView == null) {
-            initView();
-        }
-    }
-
     private void hideSearchBar() {
-
-
+        isShowing = false;
+        cordova.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                webView.removeView(searchView);
+            }
+        });
     }
 
     /** Method called when users requests to send a search.c*/
     private void onSearchAction() {
-
+        if (isShowing) {
+            hideSearchBar();
+        } else {
+            showSearchBar();
+        }
+        search(searchView.getInputText());
+        searchView.getInput().clearFocus();
+        webView.requestFocus();
+        closeKeyboard();
     }
 
     /** Sends the given search term to the Cordova WebView. */
@@ -104,33 +136,40 @@ public class SearchBar extends CordovaPlugin implements TextView.OnEditorActionL
         imm.hideSoftInputFromWindow(searchView.getInput().getWindowToken(), 0);
     }
 
-    private View.OnClickListener onSearchClick = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            search(searchView.getInputText());
-            closeKeyboard();
-        }
-    };
-
     /** Handles key events from the soft keyboard. */
     @Override
     public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-        final int action = event.getAction();
-        if (action == KeyEvent.KEYCODE_SEARCH || action == KeyEvent.KEYCODE_ENTER) {
-            search(searchView.getInputText());
-            closeKeyboard();
+        if (actionId == KeyEvent.KEYCODE_SEARCH || actionId == KeyEvent.KEYCODE_ENTER) {
+            onSearchAction();
             return true;
         }
         return false;
     }
 
+    private View.OnTouchListener drawableListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            final int DRAWABLE_LEFT = 0;
+            final int DRAWABLE_TOP = 1;
+            final int DRAWABLE_RIGHT = 2;
+            final int DRAWABLE_BOTTOM = 3;
+
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                if (event.getX() >= (searchView.getInput().getRight() -
+                        searchView.getInput().getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
+                    onSearchAction();
+                }
+            }
+            return false;
+        }
+    };
+
     /** Custom Widget for mimicking the iOS UISearchBar. */
     private static class SearchView extends LinearLayout {
         private static final int SEARCH_ICON = android.R.drawable.ic_menu_search;
-        private static final int BACKGROUND_COLOR = android.R.color.holo_purple;
-        private static final int PADDING_DP = 20;
+        private static final int BACKGROUND_COLOR = Color.parseColor("#EE4F4084");
+        private static final int PADDING_DP = 8;
         private EditText input;
-        private ImageButton searchButton;
 
         public SearchView(Context context) {
             super(context);
@@ -141,18 +180,19 @@ public class SearchBar extends CordovaPlugin implements TextView.OnEditorActionL
         /** Initializes default layout parameters and basic appearance. */
         private void initView() {
             final int padding = (int) dpToPx(PADDING_DP);
-            setPadding(padding, padding, padding, padding);
+            setPadding(padding, (int) (padding + (padding * 0.5)), padding, padding);
             setOrientation(HORIZONTAL);
-            setBackgroundColor(getResources().getColor(BACKGROUND_COLOR));
+            setBackgroundColor(BACKGROUND_COLOR);
         }
 
         /** Initializes default child Views. */
         private void initChildViews(final Context context) {
             input = new EditText(context);
-            searchButton = new ImageButton(context);
-            searchButton.setImageDrawable(getResources().getDrawable(SEARCH_ICON));
+            input.setLayoutParams(new TableRow.LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
+            input.setSingleLine();
+            input.setImeOptions(EditorInfo.IME_ACTION_SEARCH);
+            input.setCompoundDrawablesWithIntrinsicBounds(null, null, getResources().getDrawable(SEARCH_ICON), null);
             addView(input);
-            addView(searchButton);
         }
 
         /** @return String representation of the current user input. */
@@ -163,11 +203,6 @@ public class SearchBar extends CordovaPlugin implements TextView.OnEditorActionL
         /** @return the local EditText child View. */
         public EditText getInput() {
             return input;
-        }
-
-        /** @return the local ImageButton child View . */
-        public ImageButton getSearchButton() {
-            return searchButton;
         }
 
         /** @return the given density-pixel unit in exact pixels. */

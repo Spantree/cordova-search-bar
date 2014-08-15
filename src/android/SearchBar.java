@@ -88,6 +88,11 @@ public class SearchBar extends CordovaPlugin implements TextView.OnEditorActionL
     }
 
     private void showSearchBar() {
+        if (isShowing) {
+            return;
+        } else if (searchView == null) {
+            initView();
+        }
         isShowing = true;
         cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
@@ -98,6 +103,9 @@ public class SearchBar extends CordovaPlugin implements TextView.OnEditorActionL
     }
 
     private void hideSearchBar() {
+        if (searchView == null || !isShowing) {
+            return;
+        }
         isShowing = false;
         cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
@@ -109,11 +117,6 @@ public class SearchBar extends CordovaPlugin implements TextView.OnEditorActionL
 
     /** Method called when users requests to send a search.c*/
     private void onSearchAction() {
-        if (isShowing) {
-            hideSearchBar();
-        } else {
-            showSearchBar();
-        }
         search(searchView.getInputText());
         searchView.getInput().clearFocus();
         webView.requestFocus();

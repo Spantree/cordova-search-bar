@@ -8,6 +8,7 @@ import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AccelerateInterpolator;
 import android.view.inputmethod.EditorInfo;
@@ -33,6 +34,7 @@ public class SearchBar extends CordovaPlugin implements TextView.OnEditorActionL
     private static final String ACTION_SHOW = "show";
     private static final String ACTION_HIDE = "hide";
     private static final int ANIMATION_DURATION = 2000;
+    private static final boolean RESIZE_WEBVIEW = true;
 
     private SearchView searchView;
     private boolean isShowing = false;
@@ -77,8 +79,17 @@ public class SearchBar extends CordovaPlugin implements TextView.OnEditorActionL
         initAnimations();
     }
 
-    /** The given View will be overlap on top of the local WebView. */
+    /** The given View will be overlap on top or display above the local WebView. */
     private void overlayView(final View view) {
+        if (RESIZE_WEBVIEW) {
+            // Add above webview
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            ((ViewGroup) webView.getParent()).addView(view, 0, params);
+            return;
+        }
+        // Add on top of WebView
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.MATCH_PARENT,
                 RelativeLayout.LayoutParams.WRAP_CONTENT);

@@ -170,7 +170,8 @@ public class SearchBar extends CordovaPlugin implements TextView.OnEditorActionL
 
             if (event.getAction() == MotionEvent.ACTION_UP) {
                 if (event.getX() >= (searchView.getInput().getRight() -
-                        searchView.getInput().getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
+                        searchView.getInput().getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width() - 
+                        searchView.getPaddingInPx() * 2 )) {
                     onSearchAction();
                 }
             }
@@ -217,6 +218,11 @@ public class SearchBar extends CordovaPlugin implements TextView.OnEditorActionL
         /** @return the local EditText child View. */
         public EditText getInput() {
             return input;
+        }
+
+        /** @return padding used in the view */
+        public int getPaddingInPx() {
+            return (int) dpToPx(PADDING_DP);
         }
 
         /** @return the given density-pixel unit in exact pixels. */
